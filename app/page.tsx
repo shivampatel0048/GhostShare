@@ -1,101 +1,126 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import type React from "react"
+import { useState } from "react"
+import Image from "next/image"
+import { getVisitCount, shortenUrl } from "@/apis/url"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2, Link, QrCode } from "lucide-react"
+import { GhostMascot } from "@/components/shared/GhostMascot"
+
+const Page = () => {
+  const [originalUrl, setOriginalUrl] = useState<string>("")
+  const [shortUrl, setShortUrl] = useState<string | null>(null)
+  const [qrCode, setQrCode] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [visitCount, setVisitCount] = useState<number | null>(null)
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await shortenUrl(originalUrl)
+      const fullShortUrl = `${data.shortUrl}`
+      setShortUrl(fullShortUrl)
+      setQrCode(data.qrCode)
+      setVisitCount(0)
+    } catch (err) {
+      console.error(err)
+      setError("Failed to shorten URL. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchVisitCount = async () => {
+    if (shortUrl) {
+      try {
+        const data = await getVisitCount(shortUrl)
+        setVisitCount(data.visitCount)
+      } catch (err) {
+        console.error(err)
+        setError("Failed to get visit count. Please try again.")
+      }
+    }
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 flex justify-center items-center p-4">
+      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-none text-white">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold mb-2 flex items-center justify-center gap-2">
+            <GhostMascot />
+            GhostLink
+          </CardTitle>
+          <CardDescription className="text-purple-200">Shorten your links, haunt the web!</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative">
+              <Input
+                type="url"
+                value={originalUrl}
+                onChange={(e) => setOriginalUrl(e.target.value)}
+                className="w-full pl-10 bg-white/20 border-purple-400 text-white placeholder-purple-300"
+                placeholder="Enter your spooky long URL"
+                required
+              />
+              <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" size={18} />
+            </div>
+            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white" disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Summon Short Link"}
+            </Button>
+          </form>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {error && <div className="text-red-400 mt-2">{error}</div>}
+
+          {shortUrl && (
+            <div className="mt-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Your Ghostly Link:</h3>
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL}${shortUrl}`}
+                  className="text-purple-300 hover:text-purple-100 break-all"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {process.env.NEXT_PUBLIC_API_URL}
+                  {shortUrl}
+                </a>
+              </div>
+              {qrCode && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Spectral QR Code:</h3>
+                  <div className="bg-white p-2 inline-block rounded">
+                    <Image src={qrCode || "/placeholder.svg"} alt="QR Code" width={150} height={150} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+        {shortUrl && (
+          <CardFooter className="flex justify-between items-center">
+            <Button
+              onClick={fetchVisitCount}
+              variant="outline"
+              className="text-purple-200 border-purple-400 bg-transparent hover:text-white hover:bg-purple-700"
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              Reveal Visit Count
+            </Button>
+            {visitCount !== null && <span className="text-purple-200">Haunted {visitCount} times</span>}
+          </CardFooter>
+        )}
+      </Card>
     </div>
-  );
+  )
 }
+
+export default Page
+
